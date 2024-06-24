@@ -86,7 +86,7 @@ class QuizGenerator:
         from langchain_core.runnables import RunnablePassthrough, RunnableParallel
 
         # Enable a Retriever
-        retriever = self.vectorstore.as_retriever()
+        retriever = self.vectorstore.db.as_retriever()
         
         # Use the system template to create a PromptTemplate
         prompt = PromptTemplate.from_template(self.system_template)
@@ -125,24 +125,30 @@ class QuizGenerator:
 
         for _ in range(self.num_questions):
             ##### YOUR CODE HERE #####
-            question_str = # Use class method to generate question
-            
-            ##### YOUR CODE HERE #####
-            try:
-                # Convert the JSON String to a dictionary
-            except json.JSONDecodeError:
-                print("Failed to decode question JSON.")
-                continue  # Skip this iteration if JSON decoding fails
-            ##### YOUR CODE HERE #####
+            attempts = 0
 
-            ##### YOUR CODE HERE #####
-            # Validate the question using the validate_question method
-            if self.validate_question(question):
-                print("Successfully generated unique question")
-                # Add the valid and unique question to the bank
-            else:
-                print("Duplicate or invalid question detected.")
-            ##### YOUR CODE HERE #####
+            while attempts < 3:
+                question_str = self.generate_question_with_vectorstore() # Use class method to generate question
+                
+                ##### YOUR CODE HERE #####
+                try:
+                    question_str = json.loads(question_str) # Convert the JSON String to a dictionary
+                except json.JSONDecodeError:
+                    print("Failed to decode question JSON.")
+                    continue  # Skip this iteration if JSON decoding fails
+                ##### YOUR CODE HERE #####
+
+                ##### YOUR CODE HERE #####
+                # Validate the question using the validate_question method
+                if self.validate_question(question_str):
+                    print("Successfully generated unique question")
+                    # Add the valid and unique question to the bank
+                    self.question_bank.append(question_str)
+                    break
+                else:
+                    print("Duplicate or invalid question detected.")
+                    attempts += 1
+                ##### YOUR CODE HERE #####
 
         return self.question_bank
 
@@ -170,16 +176,22 @@ class QuizGenerator:
         # Consider missing 'question' key as invalid in the dict object
         # Check if a question with the same text already exists in the self.question_bank
         ##### YOUR CODE HERE #####
-        return is_unique
+        
+        question_text = question["question"]
+
+        for curr_question in self.question_bank:
+            if question_text == curr_question["question"]:
+                return False
+        return True
 
 
 # Test Generating the Quiz
 if __name__ == "__main__":
     
     embed_config = {
-        "model_name": "textembedding-gecko@003",
-        "project": "YOUR-PROJECT-ID-HERE",
-        "location": "us-central1"
+        "model_name": "text-embedding-004",
+        "project": "gemini-explorer-426415",
+        "location": "us-west1"
     }
     
     screen = st.empty()
